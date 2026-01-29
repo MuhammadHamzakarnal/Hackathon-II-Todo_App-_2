@@ -13,8 +13,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Verify that pydantic-settings is installed
 RUN python -c "import pydantic_settings; print('pydantic_settings version:', pydantic_settings.__version__)"
 
-# Verify bcrypt version (force rebuild on version change) - Build timestamp: 2026-01-29T11:49
-RUN python -c "import bcrypt; print('bcrypt version:', bcrypt.__version__)"
+# Verify bcrypt version (force rebuild on version change) - Build timestamp: 2026-01-29T11:52:40
+RUN python -c "import bcrypt; print('bcrypt version:', bcrypt.__version__); assert int(bcrypt.__version__.split('.')[0]) < 4, 'bcrypt 4.x not supported'"
 
 COPY --chown=user . /app
 
