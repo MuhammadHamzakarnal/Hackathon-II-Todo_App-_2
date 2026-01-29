@@ -124,21 +124,37 @@ class AuthService:
 
     @staticmethod
     def register_user(session: Session, user_data: UserCreate) -> User:
+        logger.info(f"[register_user] Attempting to register user: {user_data.email}")
+        
         existing_user = session.exec(
             select(User).where(User.email == user_data.email)
         ).first()
 
         if existing_user:
+            logger.warning(f"[register_user] Email already registered: {user_data.email}")
             raise ValueError("Email already registered")
 
-        user = User(
-            email=user_data.email,
-            password_hash=AuthService.hash_password(user_data.password)
-        )
-        session.add(user)
-        session.commit()
-        session.refresh(user)
-        return user
+        try:
+            logger.info("[register_user] Hashing password...")
+            password_hash = AuthService.hash_password(user_data.password)
+            logger.info("[register_user] Password hashed successfully")
+        except Exception as e:
+            logger.error(f"[register_user] Password hashing failed: {type(e).__name__}: {e}")
+            raise ValueError(f"Password hashing failed: {str(e)}")
+
+        try:
+            user = User(
+                email=user_data.email,
+                password_hash=password_hash
+            )
+            session.add(user)
+            session.commit()
+            session.refresh(user)
+            logger.info(f"[register_user] User registered successfully: {user.id}")
+            return user
+        except Exception as e:
+            logger.error(f"[register_user] Database error: {type(e).__name__}: {e}")
+            raise ValueError(f"Database error: {str(e)}")
 
     @staticmethod
     def authenticate_user(
