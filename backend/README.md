@@ -1,118 +1,77 @@
----
-title: {{title}}
-emoji: {{emoji}}
-colorFrom: {{colorFrom}}
-colorTo: {{colorTo}}
-sdk: {{sdk}}
-sdk_version: "{{sdkVersion}}"
-{{#pythonVersion}}
-python_version: "{{pythonVersion}}"
-{{/pythonVersion}}
-app_file: app.py
-pinned: false
----
+# Todo Backend API
 
-# Backend Setup and Running Instructions
+A full-stack Todo application API with JWT authentication built with FastAPI.
 
-This document explains how to set up and run the backend server for the Todo API application.
+## Features
 
-## Prerequisites
+- User authentication (register/login)
+- Task management (CRUD operations)
+- JWT-based authorization
+- PostgreSQL database integration
+- CORS support for frontend integration
 
-- Python 3.8 or higher
-- pip (Python package installer)
-- PostgreSQL database (or another SQL database compatible with SQLModel)
+## Dependencies
 
-## Installation
+- Python 3.9+
+- PostgreSQL
+- FastAPI
+- Uvicorn
+- SQLModel
+- Pydantic Settings
+- Python-Jose (for JWT)
+- Passlib (for password hashing)
 
-1. Navigate to the backend directory:
-```bash
-cd backend
-```
+## Setup
 
-2. Install the required dependencies:
-```bash
-pip install -r requirements.txt
-```
+1. Clone the repository
+2. Create a virtual environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Create a `.env` file based on `.env.example`:
+   ```bash
+   cp .env.example .env
+   ```
+5. Update the `.env` file with your database connection details and secret keys
+6. Run the application:
+   ```bash
+   uvicorn app:app --reload
+   ```
 
-## Environment Configuration
+## Environment Variables
 
-Create a `.env` file in the backend directory with the following variables:
-
-```env
-DATABASE_URL=postgresql://username:password@localhost:5432/todo_app
-BETTER_AUTH_SECRET=your-super-secret-auth-key-here-make-it-long-and-random
-CORS_ORIGINS=http://localhost:3000,http://localhost:3001
-DEBUG=false
-```
-
-## Running the Server
-
-### Development Mode
-
-To run the server in development mode with auto-reload:
-
-```bash
-cd src
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
-
-Or from the backend root directory:
-```bash
-uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-### Production Mode
-
-To run the server in production mode:
-
-```bash
-uvicorn src.main:app --host 0.0.0.0 --port 8000
-```
+- `DATABASE_URL`: PostgreSQL database connection string
+- `BETTER_AUTH_SECRET`: Secret key for JWT signing (should be a long random string)
+- `JWT_ALGORITHM`: Algorithm for JWT encoding (default: HS256)
+- `JWT_EXPIRY_DAYS`: Number of days for JWT expiry (default: 7)
+- `DEBUG`: Enable debug mode (default: False)
+- `CORS_ORIGINS`: Comma-separated list of allowed origins
 
 ## API Endpoints
 
-Once the server is running, you can access the following endpoints:
-
 - `GET /api/health` - Health check endpoint
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-- `GET /api/tasks` - Get all tasks (requires authentication)
-- `POST /api/tasks` - Create a new task (requires authentication)
-- And more task-related endpoints...
+- `POST /api/auth/register` - Register a new user
+- `POST /api/auth/login` - Login and get JWT token
+- `GET /api/auth/me` - Get current user info (requires authentication)
+- `GET /api/tasks` - Get all tasks for the current user
+- `POST /api/tasks` - Create a new task
+- `GET /api/tasks/{task_id}` - Get a specific task
+- `PUT /api/tasks/{task_id}` - Update a specific task
+- `DELETE /api/tasks/{task_id}` - Delete a specific task
+- `PATCH /api/tasks/{task_id}/complete` - Toggle task completion status
 
-## Testing
+## Deployment
 
-To run the tests:
+For deployment on Hugging Face Spaces or similar platforms:
+1. Make sure all dependencies are in `requirements.txt`
+2. Ensure the Dockerfile is properly configured
+3. Set up environment variables in the deployment platform
 
-```bash
-cd src
-python -m pytest ../tests/ -v
-```
+## License
 
-## Project Structure
-
-```
-backend/
-├── src/
-│   ├── api/          # API route definitions
-│   ├── database/     # Database connection and initialization
-│   ├── models/       # Data models
-│   ├── services/     # Business logic
-│   ├── config.py     # Configuration settings
-│   └── main.py       # Main application entry point
-├── tests/            # Test files
-├── requirements.txt  # Dependencies
-└── README.md         # This file
-```
-
-## Troubleshooting
-
-1. **Database Connection Issues**: Ensure your PostgreSQL server is running and the DATABASE_URL in your .env file is correct.
-
-2. **Import Errors**: Make sure all dependencies are installed with `pip install -r requirements.txt`.
-
-3. **Port Already in Use**: Change the port number in the uvicorn command if port 8000 is already in use.
-
-4. **CORS Issues**: Update the CORS_ORIGINS in your .env file to include your frontend domain.
-
-5. **SQLModel Relationship Error**: If you encounter an error like `TypeError: Relationship() got an unexpected keyword argument 'cascade_delete'`, this has been fixed in the code by removing the `cascade_delete=True` parameter from the Relationship definition in `src/models/user.py`. This was due to a version compatibility issue with SQLModel.
+MIT
