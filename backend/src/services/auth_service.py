@@ -12,12 +12,23 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class AuthService:
     @staticmethod
+    def _truncate_password(password: str) -> str:
+        """Truncate password to 72 bytes (bcrypt limit)"""
+        # Encode to bytes, truncate, then decode back
+        password_bytes = password.encode('utf-8')[:72]
+        return password_bytes.decode('utf-8', errors='ignore')
+
+    @staticmethod
     def hash_password(password: str) -> str:
-        return pwd_context.hash(password)
+        # Truncate password to 72 bytes to avoid bcrypt error
+        truncated = AuthService._truncate_password(password)
+        return pwd_context.hash(truncated)
 
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
-        return pwd_context.verify(plain_password, hashed_password)
+        # Truncate password to 72 bytes for verification
+        truncated = AuthService._truncate_password(plain_password)
+        return pwd_context.verify(truncated, hashed_password)
 
     @staticmethod
     def create_access_token(user_id: int, email: str) -> str:
