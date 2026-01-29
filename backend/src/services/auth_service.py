@@ -1,5 +1,8 @@
 from datetime import datetime, timedelta
 from typing import Optional
+import logging
+import hashlib
+import base64
 from passlib.context import CryptContext
 from jose import jwt, JWTError
 from sqlmodel import Session, select
@@ -7,28 +10,90 @@ from sqlmodel import Session, select
 from src.models import User, UserCreate
 from src.config import settings
 
+# Configure logging
+logger = logging.getLogger(__name__)
+
+# =============================================================================
+# BCRYPT VERSION COMPATIBILITY FIX
+# =============================================================================
+# Problem: bcrypt 4.1.0+ removed the __about__ module that passlib uses for
+# version detection, causing AttributeError on import.
+# 
+# Solution: Create a mock __about__ module BEFORE passlib tries to import it.
+# This must happen at module load time, not in a try/except.
+# =============================================================================
+import bcrypt
+import sys
+import types
+
+if not hasattr(bcrypt, '__about__'):
+    logger.info("Applying bcrypt compatibility fix for passlib...")
+    bcrypt_about = types.ModuleType('bcrypt.__about__')
+    bcrypt_about.__version__ = getattr(bcrypt, '__version__', '4.0.0')
+    sys.modules['bcrypt.__about__'] = bcrypt_about
+    bcrypt.__about__ = bcrypt_about
+    logger.info(f"bcrypt version detected: {bcrypt_about.__version__}")
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class AuthService:
+    """
+    Authentication service with secure password handling.
+    
+    SECURITY NOTE ON 72-BYTE PASSWORD LIMIT:
+    =========================================
+    bcrypt has a hard limit of 72 bytes for passwords. This is a fundamental
+    limitation of the Blowfish cipher used internally.
+    
+    INSECURE approaches (DO NOT USE):
+    - Silent truncation: passwords "A"*72+"X" and "A"*72+"Y" become identical
+    - Ignoring the limit: causes runtime errors on bcrypt 4.x
+    
+    SECURE approach (implemented here):
+    - Pre-hash passwords with SHA-256 before bcrypt
+    - SHA-256 produces 32 bytes (base64: 44 chars), always under 72 bytes
+    - This preserves full password entropy while staying within bcrypt limits
+    - Used by Dropbox, 1Password, and other security-focused applications
+    """
+    
     @staticmethod
-    def _truncate_password(password: str) -> str:
-        """Truncate password to 72 bytes (bcrypt limit)"""
-        # Encode to bytes, truncate, then decode back
-        password_bytes = password.encode('utf-8')[:72]
-        return password_bytes.decode('utf-8', errors='ignore')
+    def _prepare_password(password: str) -> str:
+        """
+        Securely prepare password for bcrypt hashing.
+        
+        Uses SHA-256 pre-hashing to handle passwords of any length while
+        preserving full entropy. The SHA-256 hash is base64-encoded to
+        produce a 44-character string, well under bcrypt's 72-byte limit.
+        
+        This is the industry-standard approach used by:
+        - Dropbox (documented in their security blog)
+        - 1Password
+        - Many other security-conscious applications
+        
+        Args:
+            password: The raw password string
+            
+        Returns:
+            A base64-encoded SHA-256 hash of the password
+        """
+        # SHA-256 hash the password to handle any length securely
+        password_bytes = password.encode('utf-8')
+        sha256_hash = hashlib.sha256(password_bytes).digest()
+        # Base64 encode to get a string (44 chars, well under 72 bytes)
+        return base64.b64encode(sha256_hash).decode('ascii')
 
     @staticmethod
     def hash_password(password: str) -> str:
-        # Truncate password to 72 bytes to avoid bcrypt error
-        truncated = AuthService._truncate_password(password)
-        return pwd_context.hash(truncated)
+        """Hash a password using SHA-256 pre-hashing + bcrypt."""
+        prepared = AuthService._prepare_password(password)
+        return pwd_context.hash(prepared)
 
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
-        # Truncate password to 72 bytes for verification
-        truncated = AuthService._truncate_password(plain_password)
-        return pwd_context.verify(truncated, hashed_password)
+        """Verify a password against its hash."""
+        prepared = AuthService._prepare_password(plain_password)
+        return pwd_context.verify(prepared, hashed_password)
 
     @staticmethod
     def create_access_token(user_id: int, email: str) -> str:
