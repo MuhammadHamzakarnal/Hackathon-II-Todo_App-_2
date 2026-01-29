@@ -1,0 +1,4 @@
+The frontend project has been successfully deployed to Vercel.
+
+You can view the preview deployment at:
+https://frontend-gcohfcq16-haroon-khans-projects-5c7a0028.vercel.app
