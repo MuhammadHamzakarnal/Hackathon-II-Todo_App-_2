@@ -1,9 +1,31 @@
+# =============================================================================
+# BCRYPT VERSION COMPATIBILITY FIX - MUST BE FIRST!
+# =============================================================================
+# Problem: bcrypt 4.1.0+ removed the __about__ module that passlib uses for
+# version detection, causing AttributeError on import.
+# 
+# Solution: Create a mock __about__ module BEFORE passlib tries to import it.
+# This must happen at module load time, before any passlib imports.
+# =============================================================================
+import sys
+import types
+
+# Apply bcrypt fix BEFORE importing passlib
+import bcrypt
+if not hasattr(bcrypt, '__about__'):
+    bcrypt_about = types.ModuleType('bcrypt.__about__')
+    setattr(bcrypt_about, '__version__', getattr(bcrypt, '__version__', '4.0.0'))
+    sys.modules['bcrypt.__about__'] = bcrypt_about
+    bcrypt.__about__ = bcrypt_about
+
+# NOW it's safe to import passlib
+from passlib.context import CryptContext
+
 from datetime import datetime, timedelta
 from typing import Optional
 import logging
 import hashlib
 import base64
-from passlib.context import CryptContext
 from jose import jwt, JWTError
 from sqlmodel import Session, select
 
@@ -12,27 +34,6 @@ from src.config import settings
 
 # Configure logging
 logger = logging.getLogger(__name__)
-
-# =============================================================================
-# BCRYPT VERSION COMPATIBILITY FIX
-# =============================================================================
-# Problem: bcrypt 4.1.0+ removed the __about__ module that passlib uses for
-# version detection, causing AttributeError on import.
-# 
-# Solution: Create a mock __about__ module BEFORE passlib tries to import it.
-# This must happen at module load time, not in a try/except.
-# =============================================================================
-import bcrypt
-import sys
-import types
-
-if not hasattr(bcrypt, '__about__'):
-    logger.info("Applying bcrypt compatibility fix for passlib...")
-    bcrypt_about = types.ModuleType('bcrypt.__about__')
-    bcrypt_about.__version__ = getattr(bcrypt, '__version__', '4.0.0')
-    sys.modules['bcrypt.__about__'] = bcrypt_about
-    bcrypt.__about__ = bcrypt_about
-    logger.info(f"bcrypt version detected: {bcrypt_about.__version__}")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

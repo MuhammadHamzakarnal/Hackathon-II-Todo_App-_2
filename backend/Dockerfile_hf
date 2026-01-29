@@ -24,6 +24,10 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Verify that pydantic-settings is installed
 RUN python -c "import pydantic_settings; print('pydantic_settings version:', pydantic_settings.__version__)"
 
+# Verify bcrypt version - bcrypt 4.0.1 is the last version with __about__ module for passlib compatibility
+# If this fails, the bcrypt_fix in auth_service.py will handle it at runtime
+RUN python -c "import bcrypt; print('bcrypt version:', bcrypt.__version__)"
+
 # Copy the rest of the application
 COPY . .
 

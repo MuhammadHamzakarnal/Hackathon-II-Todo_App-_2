@@ -1,3 +1,6 @@
+# Apply bcrypt compatibility fix FIRST, before any other imports that might use bcrypt
+from src.utils import bcrypt_fix  # noqa: F401
+
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
