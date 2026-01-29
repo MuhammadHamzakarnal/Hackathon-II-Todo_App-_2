@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://hamza1222-todo.hf.space/api';
 
 const getAuthToken = () => {
   if (typeof window !== 'undefined') {
