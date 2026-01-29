@@ -8,8 +8,8 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRY_DAYS: int = 7
     DEBUG: bool = False
-    CORS_ORIGINS: str = "http://localhost:3000,https://frontend-gcohfcq16-haroon-khans-projects-5c7a0028.vercel.app,https://itxharoon-todo.hf.space"
-    
+    CORS_ORIGINS: str = "http://localhost:3000,https://frontend-gcohfcq16-haroon-khans-projects-5c7a0028.vercel.app,https://itxharoon-todo.hf.space,https://hackathon-ii-todo-app-2-18am-k9i3mqetb.vercel.app"
+
 
     class Config:
         env_file = ".env"
