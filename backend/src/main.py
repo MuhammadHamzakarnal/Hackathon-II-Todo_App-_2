@@ -22,7 +22,7 @@ app = FastAPI(
 
 # CORS Middleware
 origins = [
-    "https://frontend-gcohfcq16-haroon-khans-projects-5c7a0028.vercel.app",  # Vercel frontend URL
+    "https://hackathon-ii-todo-app-2-18am-k9i3mqetb.vercel.app/",  # Vercel frontend URL
     "http://localhost:3000",                                             # For local development
 ]
 
