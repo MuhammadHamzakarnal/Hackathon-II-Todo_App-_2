@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (token && userData) {
         try {
           // Validate the token by calling the /me endpoint
-          const userResponse = await api.get('/auth/me');
+          const userResponse = await api.get('/api/auth/me');
           setUser(userResponse);
         } catch (error) {
           // If token is invalid, clear it
@@ -42,11 +42,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const response = await api.post('/auth/login', { email, password });
+    const response = await api.post('/api/auth/login', { email, password });
     if (response?.access_token) {
       localStorage.setItem('token', response.access_token);
       // Assuming the user object is returned at the root of the response
-      const userResponse = await api.get('/auth/me');
+      const userResponse = await api.get('/api/auth/me');
       localStorage.setItem('user', JSON.stringify(userResponse));
       setUser(userResponse);
     } else {
@@ -55,11 +55,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (email: string, password: string) => {
-    const response = await api.post('/auth/register', { email, password });
+    const response = await api.post('/api/auth/register', { email, password });
      if (response?.access_token) {
       localStorage.setItem('token', response.access_token);
       // Assuming the user object is returned at the root of the response
-      const userResponse = await api.get('/auth/me');
+      const userResponse = await api.get('/api/auth/me');
       localStorage.setItem('user', JSON.stringify(userResponse));
       setUser(userResponse);
     } else {

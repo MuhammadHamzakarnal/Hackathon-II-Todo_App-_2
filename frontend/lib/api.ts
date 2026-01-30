@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://hamza1222-todo.hf.space/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://hamza1222-todo.hf.space';
 
 const getAuthToken = () => {
   if (typeof window !== 'undefined') {
@@ -18,13 +18,29 @@ const getHeaders = () => {
   return headers;
 };
 
+// Helper to handle API responses
+const handleResponse = async (response: Response) => {
+  if (!response.ok) {
+    // Try to parse error as JSON
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || errorData.message || `HTTP ${response.status} error`);
+    }
+    // Otherwise, get text
+    const errorText = await response.text();
+    throw new Error(errorText.substring(0, 200) || `HTTP ${response.status} error`);
+  }
+  return response.json();
+};
+
 export const api = {
   get: async (endpoint: string) => {
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'GET',
       headers: getHeaders(),
     });
-    return response.json();
+    return handleResponse(response);
   },
 
   post: async (endpoint: string, data: any) => {
@@ -33,7 +49,7 @@ export const api = {
       headers: getHeaders(),
       body: JSON.stringify(data),
     });
-    return response.json();
+    return handleResponse(response);
   },
 
   put: async (endpoint: string, data: any) => {
@@ -42,7 +58,7 @@ export const api = {
       headers: getHeaders(),
       body: JSON.stringify(data),
     });
-    return response.json();
+    return handleResponse(response);
   },
 
   delete: async (endpoint: string) => {
@@ -54,7 +70,7 @@ export const api = {
     if (response.status === 204) {
       return { success: true };
     }
-    return response.json();
+    return handleResponse(response);
   },
 
   // Extended API methods
@@ -88,6 +104,6 @@ export const api = {
       headers: getHeaders(),
       body: JSON.stringify(data),
     });
-    return response.json();
+    return handleResponse(response);
   },
 };
