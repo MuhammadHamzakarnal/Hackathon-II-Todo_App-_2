@@ -75,7 +75,7 @@ export const api = {
 
   // Extended API methods
   getTasks: async (completed?: boolean | null) => {
-    let url = '/tasks';
+    let url = '/api/tasks';
     if (completed !== undefined && completed !== null) {
       url += `?completed=${completed}`;
     }
@@ -83,19 +83,19 @@ export const api = {
   },
 
   createTask: async (data: { title: string; description?: string }) => {
-    return api.post('/tasks', data);
+    return api.post('/api/tasks', data);
   },
 
   updateTask: async (id: number, data: { title?: string; description?: string; completed?: boolean }) => {
-    return api.put(`/tasks/${id}`, data);
+    return api.put(`/api/tasks/${id}`, data);
   },
 
   deleteTask: async (id: number) => {
-    return api.delete(`/tasks/${id}`);
+    return api.delete(`/api/tasks/${id}`);
   },
 
   toggleTaskCompletion: async (id: number) => {
-    return api.patch(`/tasks/${id}/complete`, {});
+    return api.patch(`/api/tasks/${id}/complete`, {});
   },
 
   patch: async (endpoint: string, data: any) => {
