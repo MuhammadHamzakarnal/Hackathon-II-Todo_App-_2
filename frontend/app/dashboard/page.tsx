@@ -118,7 +118,7 @@ export default function DashboardPage() {
   if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
       </div>
     );
   }
@@ -127,34 +127,41 @@ export default function DashboardPage() {
   const pendingCount = tasks.filter((t) => !t.completed).length;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+      <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Tasks</h1>
-          <p className="text-gray-600 mt-1">
-            {pendingCount} pending, {completedCount} completed
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">My Tasks</h1>
+          <p className="mt-1.5 text-gray-600">
+            {pendingCount} pending • {completedCount} completed
           </p>
         </div>
-        <Button onClick={openCreateModal}>
-          <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+
+        <button
+          onClick={openCreateModal}
+          className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
           Add Task
-        </Button>
+        </button>
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 mb-6">
+      <div className="mb-6 flex flex-wrap gap-2">
         {(['all', 'pending', 'completed'] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              filter === f
-                ? 'bg-indigo-600 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-            }`}
+            className={`
+              rounded-lg px-5 py-2 text-sm font-medium transition-all
+              ${
+                filter === f
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100'
+              }
+            `}
           >
             {f.charAt(0).toUpperCase() + f.slice(1)}
           </button>
