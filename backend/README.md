@@ -1,60 +1,46 @@
----
-title: Todo API Backend
-emoji: 🚀
-colorFrom: purple
-colorTo: yellow
-sdk: docker
-pinned: false
-license: mit
----
-
 # Todo API Backend
 
-This is a FastAPI-based backend for a full-stack Todo application with JWT authentication.
+This is the backend service for the Todo application, built with FastAPI.
 
 ## Features
 
-- JWT-based authentication system
-- CRUD operations for todo tasks
-- Secure password hashing
-- PostgreSQL database integration
-- CORS support for frontend integration
+- User authentication (register/login)
+- Task management (CRUD operations)
+- JWT-based authentication
+- SQLModel for database operations
+- CORS configured for frontend integration
 
 ## API Endpoints
 
-- `/api/auth/register` - Register a new user
-- `/api/auth/login` - Login and get JWT token
-- `/api/tasks/` - Get all tasks for authenticated user
-- `/api/tasks/create` - Create a new task
-- `/api/tasks/{task_id}` - Get a specific task
-- `/api/tasks/{task_id}/update` - Update a specific task
-- `/api/tasks/{task_id}/delete` - Delete a specific task
-- `/api/health` - Health check endpoint
+### Authentication
+- `POST /api/auth/register` - Register a new user
+- `POST /api/auth/login` - Login and get JWT token
+- `GET /api/auth/me` - Get current user info (requires auth)
+
+### Tasks
+- `GET /api/tasks` - Get all user tasks (requires auth)
+- `POST /api/tasks` - Create a new task (requires auth)
+- `PUT /api/tasks/{id}` - Update a task (requires auth)
+- `DELETE /api/tasks/{id}` - Delete a task (requires auth)
+- `PATCH /api/tasks/{id}/complete` - Toggle task completion (requires auth)
+
+### Health Check
+- `GET /api/health` - Check API health status
+
+### Documentation
+- `GET /docs` - Interactive API documentation (Swagger UI)
+- `GET /redoc` - Alternative API documentation (ReDoc)
 
 ## Environment Variables
 
-The application requires the following environment variables:
+The following environment variables need to be set:
 
-- `DATABASE_URL` - PostgreSQL database connection string
-- `BETTER_AUTH_SECRET` - Secret key for JWT token signing
-- `JWT_ALGORITHM` - Algorithm for JWT encoding (default: HS256)
-- `JWT_EXPIRY_DAYS` - Number of days for JWT expiry (default: 7)
-- `DEBUG` - Debug mode (default: false)
+- `DATABASE_URL` - Database connection string
+- `BETTER_AUTH_SECRET` - Secret key for JWT tokens
 - `CORS_ORIGINS` - Comma-separated list of allowed origins
 
-## Usage
+## Deployment
 
-The backend is deployed and accessible at the root URL of this space. You can make requests to the various API endpoints to interact with the todo application.
+This backend is designed to run on Hugging Face Spaces with the provided Dockerfile.
 
-## Local Development
-
-To run this application locally:
-
-1. Clone the repository
-2. Install dependencies: `pip install -r requirements.txt`
-3. Set up environment variables in a `.env` file
-4. Run the application: `uvicorn src.main:app --reload`
-
-## License
-
-MIT
+The application runs on port 7860 and listens on 0.0.0.0.

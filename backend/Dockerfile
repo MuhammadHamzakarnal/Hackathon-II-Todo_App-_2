@@ -1,24 +1,32 @@
-FROM python:3.9-slim
+FROM python:3.11-slim
 
-RUN useradd -m -u 1000 user
-USER user
-ENV PATH="/home/user/.local/bin:$PATH"
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
 
+# Set work directory
 WORKDIR /app
 
-COPY --chown=user ./requirements.txt requirements.txt
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+# Install system dependencies
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Verify that pydantic-settings is installed
-RUN python -c "import pydantic_settings; print('pydantic_settings version:', pydantic_settings.__version__)"
+# Copy requirements first to leverage Docker cache
+COPY requirements.txt .
 
-# Verify bcrypt version - Build timestamp: 2026-01-29T12:11
-# bcrypt 4.0.1 is the last version with __about__ module for passlib compatibility
-RUN python -c "import bcrypt; print('bcrypt version:', bcrypt.__version__); assert bcrypt.__version__ == '4.0.1', f'Expected bcrypt 4.0.1, got {bcrypt.__version__}'"
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
 
-COPY --chown=user . /app
+# Copy source code
+COPY . .
 
+# Expose port
 EXPOSE 7860
 
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860", "--reload"]
+# Run the application with uvicorn
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "7860"]

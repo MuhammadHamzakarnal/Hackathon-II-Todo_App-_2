@@ -1,100 +1,29 @@
-# =============================================================================
-# BCRYPT VERSION COMPATIBILITY FIX - MUST BE FIRST!
-# =============================================================================
-# Problem: bcrypt 4.1.0+ removed the __about__ module that passlib uses for
-# version detection, causing AttributeError on import.
-# 
-# Solution: Create a mock __about__ module BEFORE passlib tries to import it.
-# This must happen at module load time, before any passlib imports.
-# =============================================================================
-import sys
-import types
-
-# Apply bcrypt fix BEFORE importing passlib
-import bcrypt
-if not hasattr(bcrypt, '__about__'):
-    bcrypt_about = types.ModuleType('bcrypt.__about__')
-    setattr(bcrypt_about, '__version__', getattr(bcrypt, '__version__', '4.0.0'))
-    sys.modules['bcrypt.__about__'] = bcrypt_about
-    bcrypt.__about__ = bcrypt_about
-
-# NOW it's safe to import passlib
-from passlib.context import CryptContext
-
 from datetime import datetime, timedelta
 from typing import Optional
-import logging
-import hashlib
-import base64
+from passlib.context import CryptContext
 from jose import jwt, JWTError
 from sqlmodel import Session, select
 
 from src.models import User, UserCreate
 from src.config import settings
 
-# Configure logging
-logger = logging.getLogger(__name__)
-
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class AuthService:
-    """
-    Authentication service with secure password handling.
-    
-    SECURITY NOTE ON 72-BYTE PASSWORD LIMIT:
-    =========================================
-    bcrypt has a hard limit of 72 bytes for passwords. This is a fundamental
-    limitation of the Blowfish cipher used internally.
-    
-    INSECURE approaches (DO NOT USE):
-    - Silent truncation: passwords "A"*72+"X" and "A"*72+"Y" become identical
-    - Ignoring the limit: causes runtime errors on bcrypt 4.x
-    
-    SECURE approach (implemented here):
-    - Pre-hash passwords with SHA-256 before bcrypt
-    - SHA-256 produces 32 bytes (base64: 44 chars), always under 72 bytes
-    - This preserves full password entropy while staying within bcrypt limits
-    - Used by Dropbox, 1Password, and other security-focused applications
-    """
-    
-    @staticmethod
-    def _prepare_password(password: str) -> str:
-        """
-        Securely prepare password for bcrypt hashing.
-        
-        Uses SHA-256 pre-hashing to handle passwords of any length while
-        preserving full entropy. The SHA-256 hash is base64-encoded to
-        produce a 44-character string, well under bcrypt's 72-byte limit.
-        
-        This is the industry-standard approach used by:
-        - Dropbox (documented in their security blog)
-        - 1Password
-        - Many other security-conscious applications
-        
-        Args:
-            password: The raw password string
-            
-        Returns:
-            A base64-encoded SHA-256 hash of the password
-        """
-        # SHA-256 hash the password to handle any length securely
-        password_bytes = password.encode('utf-8')
-        sha256_hash = hashlib.sha256(password_bytes).digest()
-        # Base64 encode to get a string (44 chars, well under 72 bytes)
-        return base64.b64encode(sha256_hash).decode('ascii')
-
     @staticmethod
     def hash_password(password: str) -> str:
-        """Hash a password using SHA-256 pre-hashing + bcrypt."""
-        prepared = AuthService._prepare_password(password)
-        return pwd_context.hash(prepared)
+        # Truncate password if longer than 72 bytes to comply with bcrypt limits
+        if len(password.encode('utf-8')) > 72:
+            password = password[:72]
+        return pwd_context.hash(password)
 
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
-        """Verify a password against its hash."""
-        prepared = AuthService._prepare_password(plain_password)
-        return pwd_context.verify(prepared, hashed_password)
+        # Truncate password if longer than 72 bytes to comply with bcrypt limits
+        if len(plain_password.encode('utf-8')) > 72:
+            plain_password = plain_password[:72]
+        return pwd_context.verify(plain_password, hashed_password)
 
     @staticmethod
     def create_access_token(user_id: int, email: str) -> str:
@@ -124,37 +53,21 @@ class AuthService:
 
     @staticmethod
     def register_user(session: Session, user_data: UserCreate) -> User:
-        logger.info(f"[register_user] Attempting to register user: {user_data.email}")
-        
         existing_user = session.exec(
             select(User).where(User.email == user_data.email)
         ).first()
 
         if existing_user:
-            logger.warning(f"[register_user] Email already registered: {user_data.email}")
             raise ValueError("Email already registered")
 
-        try:
-            logger.info("[register_user] Hashing password...")
-            password_hash = AuthService.hash_password(user_data.password)
-            logger.info("[register_user] Password hashed successfully")
-        except Exception as e:
-            logger.error(f"[register_user] Password hashing failed: {type(e).__name__}: {e}")
-            raise ValueError(f"Password hashing failed: {str(e)}")
-
-        try:
-            user = User(
-                email=user_data.email,
-                password_hash=password_hash
-            )
-            session.add(user)
-            session.commit()
-            session.refresh(user)
-            logger.info(f"[register_user] User registered successfully: {user.id}")
-            return user
-        except Exception as e:
-            logger.error(f"[register_user] Database error: {type(e).__name__}: {e}")
-            raise ValueError(f"Database error: {str(e)}")
+        user = User(
+            email=user_data.email,
+            password_hash=AuthService.hash_password(user_data.password)
+        )
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        return user
 
     @staticmethod
     def authenticate_user(
