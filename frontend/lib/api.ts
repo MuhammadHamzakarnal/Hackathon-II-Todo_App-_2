@@ -1,4 +1,15 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://hamza1222-todo.hf.space';
+let API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://hamza1222-todo.hf.space';
+
+// Ensure API_BASE_URL doesn't end with '/api' to prevent double prefixes
+if (API_BASE_URL.endsWith('/api')) {
+  API_BASE_URL = API_BASE_URL.slice(0, -'/api'.length);
+  // Ensure it doesn't end with '/' so we can properly append endpoints
+  if (API_BASE_URL.endsWith('/')) {
+    API_BASE_URL = API_BASE_URL.slice(0, -1);
+  }
+}
+
+const API_URL = API_BASE_URL;
 
 const getAuthToken = () => {
   if (typeof window !== 'undefined') {
