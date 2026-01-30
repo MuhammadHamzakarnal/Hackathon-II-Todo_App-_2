@@ -24,7 +24,7 @@ class User(UserBase, table=True):
 
 class UserCreate(SQLModel):
     email: str = Field(max_length=255)
-    password: str = Field(min_length=8, max_length=128)
+    password: str = Field(min_length=8, max_length=72)  # Limit to 72 bytes for bcrypt compatibility
 
 
 class UserRead(SQLModel):

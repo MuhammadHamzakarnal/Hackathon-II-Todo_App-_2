@@ -1,7 +1,9 @@
 import os
+import traceback
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from src.config import settings
 from src.database import init_db
@@ -27,6 +29,22 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# Global exception handler to ensure all errors return JSON
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    # Log the full traceback for debugging
+    print(f"Global exception handler caught: {exc}")
+    print(traceback.format_exc())
+
+    # Return JSON response instead of HTML
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Internal server error",
+            "message": "An unexpected error occurred"
+        }
+    )
 
 # CORS Middleware - use origins from settings
 cors_origins = [origin.strip() for origin in settings.CORS_ORIGINS.split(",") if origin.strip()]
